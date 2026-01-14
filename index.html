@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>פאזל 5 חלקים רספונסיבי</title>
+    <style>
+        :root {
+            /* הגדרת יחס התמונה המקורית (1200/1080) */
+            --aspect-ratio: 1200 / 1080;
+            --max-display-width: 600px; /* הקטנו את התצוגה המקסימלית במחשב */
+        }
+
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 10px;
+            touch-action: manipulation; /* מונע זום בטעות בנייד */
+        }
+
+        h1 { font-size: 1.5rem; margin: 10px 0; }
+
+        #puzzle-container {
+            display: flex;
+            width: 95vw; /* תופס כמעט את כל רוחב המסך בנייד */
+            max-width: var(--max-display-width); /* לא עובר את ה-600px במחשב */
+            aspect-ratio: var(--aspect-ratio);
+            border: 3px solid #333;
+            background-color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .slot {
+            flex: 1; /* מחלק את הרוחב ל-5 חלקים שווים אוטומטית */
+            height: 100%;
+            border: 1px dashed #ccc;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        #pieces-bank {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background: #ddd;
+            border-radius: 8px;
+            width: 95vw;
+            max-width: var(--max-display-width);
+            flex-wrap: wrap;
+            justify-content: center;
+            min-height: 80px;
+        }
+
+        .piece {
+            width: calc((95vw / 5) - 10px); /* גודל דינמי בבנק */
+            max-width: calc(var(--max-display-width) / 5 - 10px);
+            aspect-ratio: var(--aspect-ratio);
+            cursor: grab;
+            background-size: 500% 100%; /* כי יש 5 חלקים אופקיים */
+            border: 1px solid #fff;
+            box-sizing: border-box;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* כשהחלק בתוך הלוח, הוא מתפרס על כל הסלוט */
+        .slot .piece {
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            box-shadow: none;
+            border: none;
+        }
+
+        .selected {
+            outline: 3px solid #007bff;
+            transform: scale(1.1);
+        }
+
+        #message {
+            margin: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: green;
+            display: none;
+        }
+
+        .controls { display: flex; gap: 10px; }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>הרכיבו את הפאזל</h1>
+    
+    <div id="puzzle-container">
+        <div class="slot" data-index="0"></div>
+        <div class="slot" data-index="1"></div>
+        <div class="slot" data-index="2"></div>
+        <div class="slot" data-index="3"></div>
+        <div class="slot" data-index="4"></div>
+    </div>
+
+    <div id="message">כל הכבוד! הפאזל הושלם 🎉</div>
+
+    <div class="controls">
+        <button onclick="location.reload()">ערבב מחדש</button>
+    </div>
+
+    <p style="font-size: 0.9rem; color: #666;">בנייד: לחץ על חלק ואז על המקום המיועד</p>
+    <div id="pieces-bank"></div>
+
+    <script>
+        const imageUrl = 'homePaint.png'; 
+        const piecesBank = document.getElementById('pieces-bank');
+        const slots = document.querySelectorAll('.slot');
+        const message = document.getElementById('message');
+
+        let selectedPiece = null;
+
+        function createPieces() {
+            const pieceIndices = [0, 1, 2, 3, 4];
+            const pieces = pieceIndices.map(i => {
+                const div = document.createElement('div');
+                div.classList.add('piece');
+                div.draggable = true;
+                div.style.backgroundImage = `url('${imageUrl}')`;
+                
+                // שימוש באחוזים למיקום הרקע הופך את זה לרספונסיבי
+                div.style.backgroundPosition = `${i * 25}% 0%`; 
+                div.dataset.correctIndex = i;
+                
+                // תמיכה בגרירה (Desktop)
+                div.addEventListener('dragstart', () => { selectedPiece = div; });
+
+                // תמיכה בלחיצה (Mobile/Desktop)
+                div.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (selectedPiece) selectedPiece.classList.remove('selected');
+                    selectedPiece = div;
+                    div.classList.add('selected');
+                });
+
+                return div;
+            });
+
+            pieces.sort(() => Math.random() - 0.5);
+            pieces.forEach(p => piecesBank.appendChild(p));
+        }
+
+        // טיפול בסלוטים (גם גרירה וגם לחיצה)
+        slots.forEach(slot => {
+            slot.addEventListener('dragover', (e) => e.preventDefault());
+            slot.addEventListener('drop', (e) => {
+                e.preventDefault();
+                placePiece(slot);
+            });
+            slot.addEventListener('click', () => {
+                if (selectedPiece) placePiece(slot);
+            });
+        });
+
+        function placePiece(slot) {
+            if (slot.children.length === 0 && selectedPiece) {
+                selectedPiece.classList.remove('selected');
+                slot.appendChild(selectedPiece);
+                selectedPiece = null;
+                checkWin();
+            }
+        }
+
+        // החזרה לבנק בלחיצה על הבנק
+        piecesBank.addEventListener('click', () => {
+            if (selectedPiece && selectedPiece.parentElement !== piecesBank) {
+                selectedPiece.classList.remove('selected');
+                piecesBank.appendChild(selectedPiece);
+                selectedPiece = null;
+                checkWin();
+            }
+        });
+        piecesBank.addEventListener('dragover', (e) => e.preventDefault());
+        piecesBank.addEventListener('drop', () => { piecesBank.appendChild(selectedPiece); checkWin(); });
+
+        function checkWin() {
+            let isWin = true;
+            slots.forEach(slot => {
+                const piece = slot.children[0];
+                if (!piece || piece.dataset.correctIndex != slot.dataset.index) {
+                    isWin = false;
+                }
+            });
+
+            if (isWin) {
+                message.style.display = 'block';
+                slots.forEach(s => s.style.border = 'none');
+            } else {
+                message.style.display = 'none';
+            }
+        }
+
+        createPieces();
+    </script>
+</body>
+</html>
