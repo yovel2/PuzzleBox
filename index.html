@@ -2,12 +2,12 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>פאזל 5 חלקים</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>פאזל 5 חלקים מקצועי</title>
     <style>
         :root {
             --aspect-ratio: 1200 / 1080;
-            --max-ui-width: 600px;
+            --puzzle-max-width: 450px; /* הקטנת הבלוק הראשי */
             --win-color: #28a745;
         }
 
@@ -18,28 +18,26 @@
             align-items: center;
             background-color: #f0f2f5;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             overflow-x: hidden;
+            /* מניעת גלילה בזמן גרירה במובייל */
+            touch-action: none; 
         }
 
+        h1 { font-size: 1.2rem; margin: 10px 0; color: #333; }
+
+        /* לוח הפאזל */
         #puzzle-container {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            width: 95vw;
-            max-width: var(--max-ui-width);
+            width: 90vw;
+            max-width: var(--puzzle-max-width);
             aspect-ratio: var(--aspect-ratio);
             background: #fff;
             border: 4px solid #333;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            margin-bottom: 25px;
-            transition: all 0.5s ease;
-        }
-
-        /* חיווי ניצחון לקונטיינר */
-        .win-glow {
-            border-color: var(--win-color) !important;
-            box-shadow: 0 0 50px rgba(40, 167, 69, 0.7) !important;
-            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            z-index: 1;
         }
 
         .slot {
@@ -47,86 +45,80 @@
             height: 100%;
             border-left: 1px dashed #ddd;
             position: relative;
-            overflow: hidden;
         }
         .slot:last-child { border-left: none; }
 
+        /* החלקים - גודל אחיד בבנק ובלוח */
         .piece {
-            cursor: grab;
-            background-size: 500% 100%;
             width: 100%;
             height: 100%;
+            cursor: grab;
+            background-size: 500% 100%;
             box-sizing: border-box;
+            touch-action: none;
+            user-select: none;
+            position: relative;
+            z-index: 2;
         }
 
-        #pieces-bank .piece {
-            width: calc((95vw / 5) - 10px);
-            max-width: calc(var(--max-ui-width) / 5 - 10px);
+        .piece.dragging {
+            opacity: 0.8;
+            cursor: grabbing;
+            z-index: 1000 !important;
+            position: fixed; /* מאפשר תנועה חופשית מעל הכל */
+            pointer-events: none; /* מאפשר לזהות מה מתחת לאצבע */
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        /* בנק החלקים */
+        #pieces-bank {
+            display: flex;
+            gap: 8px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 12px;
+            width: 90vw;
+            max-width: var(--puzzle-max-width);
+            min-height: 100px;
+            justify-content: center;
+            flex-wrap: nowrap; /* שומר אותם בשורה אחת */
+            overflow-x: auto;
+        }
+
+        /* הגדרת גודל לחלקים בתוך הבנק - זהה לסלוט */
+        #pieces-bank .piece-wrapper {
+            width: calc((90vw / 5) - 10px);
+            max-width: calc(var(--puzzle-max-width) / 5 - 10px);
             aspect-ratio: var(--aspect-ratio);
-            border: 2px solid #fff;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            margin: 5px;
-            display: inline-block;
-        }
-
-        .slot .piece {
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-
-        .selected {
-            outline: 5px solid #007bff;
-            outline-offset: -5px;
+            flex-shrink: 0;
         }
 
         #message {
             display: none;
             background: var(--win-color);
             color: white;
-            padding: 15px 40px;
+            padding: 12px 30px;
             border-radius: 50px;
             margin-bottom: 15px;
             font-weight: bold;
-            font-size: 1.5rem;
-            z-index: 1000;
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes popIn {
-            from { transform: scale(0.5); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        #pieces-bank {
-            display: flex;
-            gap: 5px;
-            padding: 15px;
-            background: #e9ecef;
-            border-radius: 12px;
-            width: 95vw;
-            max-width: var(--max-ui-width);
-            flex-wrap: wrap;
-            justify-content: center;
-            min-height: 100px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
         button {
-            padding: 12px 24px;
+            padding: 10px 20px;
             background: #333;
             color: white;
             border: none;
             border-radius: 8px;
+            margin-bottom: 15px;
             cursor: pointer;
-            margin-bottom: 20px;
         }
 
+        .win-glow { border-color: var(--win-color) !important; box-shadow: 0 0 30px rgba(40,167,69,0.5) !important; }
+        
         .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            z-index: 999;
-            top: -10px;
+            position: fixed; width: 8px; height: 8px; z-index: 999; top: -10px;
             animation: fall linear forwards;
         }
         @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
@@ -134,8 +126,8 @@
 </head>
 <body>
 
-    <h1>הרכיבו את התמונה</h1>
-    <div id="message">כל הכבוד! הפאזל מושלם 🏆</div>
+    <h1>גררו את החלקים למקום</h1>
+    <div id="message">ניצחון! התמונה הושלמה 🏆</div>
     
     <div id="puzzle-container">
         <div class="slot" data-index="0"></div>
@@ -146,7 +138,9 @@
     </div>
 
     <button onclick="location.reload()">משחק חדש</button>
-    <div id="pieces-bank"></div>
+
+    <div id="pieces-bank">
+        </div>
 
     <script>
         const imageUrl = 'homePaint.png'; 
@@ -156,114 +150,138 @@
         const msg = document.getElementById('message');
 
         let activePiece = null;
+        let startX, startY, origX, origY;
 
         function init() {
             const indices = [0, 1, 2, 3, 4];
             const pieces = indices.map(i => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'piece-wrapper';
+                
                 const p = document.createElement('div');
                 p.className = 'piece';
-                p.draggable = true;
                 p.style.backgroundImage = `url('${imageUrl}')`;
                 p.style.backgroundPosition = `${i * 25}% 0%`; 
                 p.dataset.idx = i;
 
-                p.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    handlePieceClick(p);
-                });
+                // הוספת מאזינים לגרירה (עכבר + מגע)
+                p.addEventListener('mousedown', startDrag);
+                p.addEventListener('touchstart', startDrag, {passive: false});
 
-                p.addEventListener('dragstart', () => { 
-                    activePiece = p; 
-                    p.classList.add('selected');
-                });
-
-                return p;
+                wrapper.appendChild(p);
+                return wrapper;
             });
 
-            pieces.sort(() => Math.random() - 0.5).forEach(p => bank.appendChild(p));
+            pieces.sort(() => Math.random() - 0.5).forEach(w => bank.appendChild(w));
         }
 
-        function handlePieceClick(clickedPiece) {
-            if (!activePiece) {
-                activePiece = clickedPiece;
-                activePiece.classList.add('selected');
-                return;
+        function startDrag(e) {
+            e.preventDefault();
+            activePiece = e.target;
+            const touch = e.type === 'touchstart' ? e.touches[0] : e;
+            
+            const rect = activePiece.getBoundingClientRect();
+            startX = touch.clientX;
+            startY = touch.clientY;
+            origX = rect.left;
+            origY = rect.top;
+
+            // הגדרת גודל קבוע בזמן גרירה
+            activePiece.style.width = rect.width + 'px';
+            activePiece.style.height = rect.height + 'px';
+            activePiece.classList.add('dragging');
+            activePiece.style.left = origX + 'px';
+            activePiece.style.top = origY + 'px';
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag, {passive: false});
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function drag(e) {
+            if (!activePiece) return;
+            e.preventDefault();
+            const touch = e.type === 'touchmove' ? e.touches[0] : e;
+            
+            const dx = touch.clientX - startX;
+            const dy = touch.clientY - startY;
+
+            activePiece.style.left = (origX + dx) + 'px';
+            activePiece.style.top = (origY + dy) + 'px';
+        }
+
+        function endDrag(e) {
+            if (!activePiece) return;
+            
+            const touch = e.type === 'touchend' ? e.changedTouches[0] : e;
+            activePiece.classList.remove('dragging');
+            
+            // מציאת האלמנט שנמצא מתחת לנקודת השחרור
+            const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            const targetSlot = elementBelow ? elementBelow.closest('.slot') : null;
+            const targetBank = elementBelow ? elementBelow.closest('#pieces-bank') : null;
+
+            if (targetSlot) {
+                if (targetSlot.children.length > 0) {
+                    // החלפה (Swap)
+                    const existingPiece = targetSlot.children[0];
+                    const currentParent = activePiece.parentElement;
+                    targetSlot.appendChild(activePiece);
+                    currentParent.appendChild(existingPiece);
+                } else {
+                    targetSlot.appendChild(activePiece);
+                }
+            } else if (targetBank) {
+                // החזרה לבנק בתוך wrapper פנוי או חדש
+                const emptyWrapper = Array.from(bank.children).find(w => w.children.length === 0);
+                if (emptyWrapper) emptyWrapper.appendChild(activePiece);
+                else {
+                    const w = document.createElement('div');
+                    w.className = 'piece-wrapper';
+                    w.appendChild(activePiece);
+                    bank.appendChild(w);
+                }
             }
 
-            const parent1 = activePiece.parentElement;
-            const parent2 = clickedPiece.parentElement;
-
-            parent1.appendChild(clickedPiece);
-            parent2.appendChild(activePiece);
-
-            activePiece.classList.remove('selected');
+            // איפוס סטייל ידני
+            activePiece.style.width = '';
+            activePiece.style.height = '';
+            activePiece.style.left = '';
+            activePiece.style.top = '';
+            
             activePiece = null;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('touchmove', drag);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchend', endDrag);
+            
             checkWin();
         }
 
-        slots.forEach(slot => {
-            slot.addEventListener('dragover', (e) => e.preventDefault());
-            slot.addEventListener('drop', (e) => {
-                e.preventDefault();
-                if (activePiece) {
-                    if (slot.children.length === 0) {
-                        slot.appendChild(activePiece);
-                    } else {
-                        handlePieceClick(slot.children[0]);
-                    }
-                    if (activePiece) activePiece.classList.remove('selected');
-                    activePiece = null;
-                    checkWin();
-                }
-            });
-            slot.addEventListener('click', () => {
-                if (activePiece && slot.children.length === 0) {
-                    slot.appendChild(activePiece);
-                    activePiece.classList.remove('selected');
-                    activePiece = null;
-                    checkWin();
-                }
-            });
-        });
-
         function checkWin() {
-            let isFull = true;
-            let isCorrect = true;
-
+            let winCount = 0;
             slots.forEach(s => {
                 const p = s.children[0];
-                if (!p) {
-                    isFull = false;
-                } else if (p.dataset.idx !== s.dataset.index) {
-                    isCorrect = false;
-                }
+                if (p && p.dataset.idx === s.dataset.index) winCount++;
             });
 
-            if (isFull && isCorrect) {
-                triggerWin();
-            }
-        }
-
-        function triggerWin() {
-            msg.style.display = 'block';
-            container.classList.add('win-glow');
-            slots.forEach(s => s.style.border = 'none');
-            
-            // יצירת קונפטי
-            for (let i = 0; i < 100; i++) {
-                setTimeout(createConfetti, i * 20);
+            if (winCount === 5) {
+                msg.style.display = 'block';
+                container.classList.add('win-glow');
+                for (let i = 0; i < 80; i++) setTimeout(createConfetti, i * 20);
             }
         }
 
         function createConfetti() {
-            const colors = ['#ff0', '#f0f', '#0ff', '#0f0', '#fff', '#28a745'];
+            const colors = ['#ff0', '#f0f', '#0ff', '#0f0', '#fff'];
             const c = document.createElement('div');
             c.className = 'confetti';
             c.style.left = Math.random() * 100 + 'vw';
             c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-            c.style.width = Math.random() * 8 + 5 + 'px';
+            c.style.width = (Math.random() * 8 + 4) + 'px';
             c.style.height = c.style.width;
-            c.style.animationDuration = Math.random() * 2 + 2 + 's';
+            c.style.animationDuration = (Math.random() * 2 + 2) + 's';
             document.body.appendChild(c);
             setTimeout(() => c.remove(), 4000);
         }
