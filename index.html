@@ -3,105 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>פאזל 5 חלקים רספונסיבי</title>
+    <title>פאזל 5 חלקים - חיווי תקין</title>
     <style>
         :root {
-            /* הגדרת יחס התמונה המקורית (1200/1080) */
             --aspect-ratio: 1200 / 1080;
-            --max-display-width: 600px; /* הקטנו את התצוגה המקסימלית במחשב */
+            --max-ui-width: 600px;
+            --win-color: #28a745;
         }
 
         body {
-            font-family: sans-serif;
+            font-family: system-ui, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: #f4f4f4;
+            background-color: #f0f2f5;
             margin: 0;
-            padding: 10px;
-            touch-action: manipulation; /* מונע זום בטעות בנייד */
+            padding: 20px;
+            overflow-x: hidden;
         }
 
-        h1 { font-size: 1.5rem; margin: 10px 0; }
-
         #puzzle-container {
-            display: flex;
-            width: 95vw; /* תופס כמעט את כל רוחב המסך בנייד */
-            max-width: var(--max-display-width); /* לא עובר את ה-600px במחשב */
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            width: 95vw;
+            max-width: var(--max-ui-width);
             aspect-ratio: var(--aspect-ratio);
-            border: 3px solid #333;
-            background-color: #fff;
-            margin-bottom: 20px;
+            background: #fff;
+            border: 4px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            margin-bottom: 25px;
+            transition: all 0.5s ease;
+        }
+
+        /* מצב ניצחון לקונטיינר */
+        .win-glow {
+            border-color: var(--win-color) !important;
+            box-shadow: 0 0 50px rgba(40, 167, 69, 0.7) !important;
+            transform: scale(1.03);
         }
 
         .slot {
-            flex: 1; /* מחלק את הרוחב ל-5 חלקים שווים אוטומטית */
+            width: 100%;
             height: 100%;
-            border: 1px dashed #ccc;
-            box-sizing: border-box;
+            border-left: 1px dashed #ddd;
             position: relative;
+            overflow: hidden;
+        }
+        .slot:last-child { border-left: none; }
+
+        .piece {
+            cursor: grab;
+            background-size: 500% 100%;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            transition: outline 0.1s;
+        }
+
+        /* חלק בבנק */
+        #pieces-bank .piece {
+            width: calc((95vw / 5) - 10px);
+            max-width: calc(var(--max-ui-width) / 5 - 10px);
+            aspect-ratio: var(--aspect-ratio);
+            border: 2px solid #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin: 5px;
+            display: inline-block;
+        }
+
+        /* כשהחלק מוצב בלוח */
+        .slot .piece {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .selected {
+            outline: 5px solid #007bff;
+            outline-offset: -5px;
+        }
+
+        /* חיווי להצבה נכונה של חלק בודד */
+        .correct-placement {
+            filter: brightness(1.1);
+            outline: 3px solid var(--win-color);
+            outline-offset: -3px;
+        }
+
+        #message {
+            display: none;
+            background: var(--win-color);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1.5rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
         }
 
         #pieces-bank {
             display: flex;
-            gap: 10px;
+            gap: 5px;
             padding: 15px;
-            background: #ddd;
-            border-radius: 8px;
+            background: #e9ecef;
+            border-radius: 12px;
             width: 95vw;
-            max-width: var(--max-display-width);
+            max-width: var(--max-ui-width);
             flex-wrap: wrap;
             justify-content: center;
-            min-height: 80px;
         }
 
-        .piece {
-            width: calc((95vw / 5) - 10px); /* גודל דינמי בבנק */
-            max-width: calc(var(--max-display-width) / 5 - 10px);
-            aspect-ratio: var(--aspect-ratio);
-            cursor: grab;
-            background-size: 500% 100%; /* כי יש 5 חלקים אופקיים */
-            border: 1px solid #fff;
-            box-sizing: border-box;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        /* כשהחלק בתוך הלוח, הוא מתפרס על כל הסלוט */
-        .slot .piece {
-            width: 100%;
-            height: 100%;
-            max-width: none;
-            box-shadow: none;
-            border: none;
-        }
-
-        .selected {
-            outline: 3px solid #007bff;
-            transform: scale(1.1);
-        }
-
-        #message {
-            margin: 15px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: green;
-            display: none;
-        }
-
-        .controls { display: flex; gap: 10px; }
         button {
-            padding: 10px 20px;
-            cursor: pointer;
+            padding: 12px 24px;
             background: #333;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 20px;
         }
+
+        /* קונפטי */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            z-index: 999;
+            top: -10px;
+            animation: fall linear forwards;
+        }
+        @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
     </style>
 </head>
 <body>
 
-    <h1>הרכיבו את הפאזל</h1>
+    <h1>הרכיבו את התמונה</h1>
+    <div id="message">כל הכבוד! הפאזל מושלם 🏆</div>
     
     <div id="puzzle-container">
         <div class="slot" data-index="0"></div>
@@ -111,104 +150,136 @@
         <div class="slot" data-index="4"></div>
     </div>
 
-    <div id="message">כל הכבוד! הפאזל הושלם 🎉</div>
-
-    <div class="controls">
-        <button onclick="location.reload()">ערבב מחדש</button>
-    </div>
-
-    <p style="font-size: 0.9rem; color: #666;">בנייד: לחץ על חלק ואז על המקום המיועד</p>
+    <button onclick="location.reload()">משחק חדש</button>
     <div id="pieces-bank"></div>
 
     <script>
         const imageUrl = 'homePaint.png'; 
-        const piecesBank = document.getElementById('pieces-bank');
+        const container = document.getElementById('puzzle-container');
+        const bank = document.getElementById('pieces-bank');
         const slots = document.querySelectorAll('.slot');
-        const message = document.getElementById('message');
+        const msg = document.getElementById('message');
 
-        let selectedPiece = null;
+        let activePiece = null;
 
-        function createPieces() {
-            const pieceIndices = [0, 1, 2, 3, 4];
-            const pieces = pieceIndices.map(i => {
-                const div = document.createElement('div');
-                div.classList.add('piece');
-                div.draggable = true;
-                div.style.backgroundImage = `url('${imageUrl}')`;
-                
-                // שימוש באחוזים למיקום הרקע הופך את זה לרספונסיבי
-                div.style.backgroundPosition = `${i * 25}% 0%`; 
-                div.dataset.correctIndex = i;
-                
-                // תמיכה בגרירה (Desktop)
-                div.addEventListener('dragstart', () => { selectedPiece = div; });
+        function init() {
+            const indices = [0, 1, 2, 3, 4];
+            const pieces = indices.map(i => {
+                const p = document.createElement('div');
+                p.className = 'piece';
+                p.draggable = true;
+                p.style.backgroundImage = `url('${imageUrl}')`;
+                p.style.backgroundPosition = `${i * 25}% 0%`; 
+                p.dataset.idx = i;
 
-                // תמיכה בלחיצה (Mobile/Desktop)
-                div.addEventListener('click', (e) => {
+                p.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (selectedPiece) selectedPiece.classList.remove('selected');
-                    selectedPiece = div;
-                    div.classList.add('selected');
+                    handlePieceClick(p);
                 });
 
-                return div;
+                p.addEventListener('dragstart', () => { 
+                    activePiece = p; 
+                    p.classList.add('selected');
+                });
+
+                return p;
             });
 
-            pieces.sort(() => Math.random() - 0.5);
-            pieces.forEach(p => piecesBank.appendChild(p));
+            pieces.sort(() => Math.random() - 0.5).forEach(p => bank.appendChild(p));
         }
 
-        // טיפול בסלוטים (גם גרירה וגם לחיצה)
+        function handlePieceClick(clickedPiece) {
+            if (!activePiece) {
+                activePiece = clickedPiece;
+                activePiece.classList.add('selected');
+                return;
+            }
+
+            const parent1 = activePiece.parentElement;
+            const parent2 = clickedPiece.parentElement;
+
+            // החלפה
+            parent1.appendChild(clickedPiece);
+            parent2.appendChild(activePiece);
+
+            activePiece.classList.remove('selected');
+            activePiece = null;
+            checkWin();
+        }
+
         slots.forEach(slot => {
             slot.addEventListener('dragover', (e) => e.preventDefault());
             slot.addEventListener('drop', (e) => {
                 e.preventDefault();
-                placePiece(slot);
+                if (activePiece) {
+                    if (slot.children.length === 0) {
+                        slot.appendChild(activePiece);
+                    } else {
+                        handlePieceClick(slot.children[0]);
+                    }
+                    if (activePiece) activePiece.classList.remove('selected');
+                    activePiece = null;
+                    checkWin();
+                }
             });
             slot.addEventListener('click', () => {
-                if (selectedPiece) placePiece(slot);
+                if (activePiece && slot.children.length === 0) {
+                    slot.appendChild(activePiece);
+                    activePiece.classList.remove('selected');
+                    activePiece = null;
+                    checkWin();
+                }
             });
         });
 
-        function placePiece(slot) {
-            if (slot.children.length === 0 && selectedPiece) {
-                selectedPiece.classList.remove('selected');
-                slot.appendChild(selectedPiece);
-                selectedPiece = null;
-                checkWin();
-            }
-        }
-
-        // החזרה לבנק בלחיצה על הבנק
-        piecesBank.addEventListener('click', () => {
-            if (selectedPiece && selectedPiece.parentElement !== piecesBank) {
-                selectedPiece.classList.remove('selected');
-                piecesBank.appendChild(selectedPiece);
-                selectedPiece = null;
-                checkWin();
-            }
-        });
-        piecesBank.addEventListener('dragover', (e) => e.preventDefault());
-        piecesBank.addEventListener('drop', () => { piecesBank.appendChild(selectedPiece); checkWin(); });
-
         function checkWin() {
-            let isWin = true;
-            slots.forEach(slot => {
-                const piece = slot.children[0];
-                if (!piece || piece.dataset.correctIndex != slot.dataset.index) {
-                    isWin = false;
+            let winCount = 0;
+            
+            slots.forEach(s => {
+                const p = s.children[0];
+                if (p) {
+                    // בדיקה האם החלק הספציפי במקום הנכון
+                    if (p.dataset.idx === s.dataset.index) {
+                        p.classList.add('correct-placement');
+                        winCount++;
+                    } else {
+                        p.classList.remove('correct-placement');
+                    }
                 }
             });
 
-            if (isWin) {
-                message.style.display = 'block';
-                slots.forEach(s => s.style.border = 'none');
+            if (winCount === 5) {
+                triggerWin();
             } else {
-                message.style.display = 'none';
+                msg.style.display = 'none';
+                container.classList.remove('win-glow');
             }
         }
 
-        createPieces();
+        function triggerWin() {
+            msg.style.display = 'block';
+            container.classList.add('win-glow');
+            slots.forEach(s => s.style.border = 'none');
+            
+            for (let i = 0; i < 100; i++) {
+                setTimeout(createConfetti, i * 20);
+            }
+        }
+
+        function createConfetti() {
+            const colors = ['#ff0', '#f0f', '#0ff', '#0f0', '#fff', '#28a745'];
+            const c = document.createElement('div');
+            c.className = 'confetti';
+            c.style.left = Math.random() * 100 + 'vw';
+            c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            c.style.width = Math.random() * 8 + 5 + 'px';
+            c.style.height = c.style.width;
+            c.style.animationDuration = Math.random() * 2 + 2 + 's';
+            document.body.appendChild(c);
+            setTimeout(() => c.remove(), 4000);
+        }
+
+        init();
     </script>
 </body>
 </html>
