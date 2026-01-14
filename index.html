@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>פאזל 5 חלקים - חיווי תקין</title>
+    <title>פאזל 5 חלקים</title>
     <style>
         :root {
             --aspect-ratio: 1200 / 1080;
@@ -35,11 +35,11 @@
             transition: all 0.5s ease;
         }
 
-        /* מצב ניצחון לקונטיינר */
+        /* חיווי ניצחון לקונטיינר */
         .win-glow {
             border-color: var(--win-color) !important;
             box-shadow: 0 0 50px rgba(40, 167, 69, 0.7) !important;
-            transform: scale(1.03);
+            transform: scale(1.02);
         }
 
         .slot {
@@ -57,10 +57,8 @@
             width: 100%;
             height: 100%;
             box-sizing: border-box;
-            transition: outline 0.1s;
         }
 
-        /* חלק בבנק */
         #pieces-bank .piece {
             width: calc((95vw / 5) - 10px);
             max-width: calc(var(--max-ui-width) / 5 - 10px);
@@ -71,7 +69,6 @@
             display: inline-block;
         }
 
-        /* כשהחלק מוצב בלוח */
         .slot .piece {
             position: absolute;
             top: 0;
@@ -83,13 +80,6 @@
             outline-offset: -5px;
         }
 
-        /* חיווי להצבה נכונה של חלק בודד */
-        .correct-placement {
-            filter: brightness(1.1);
-            outline: 3px solid var(--win-color);
-            outline-offset: -3px;
-        }
-
         #message {
             display: none;
             background: var(--win-color);
@@ -99,8 +89,13 @@
             margin-bottom: 15px;
             font-weight: bold;
             font-size: 1.5rem;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
             z-index: 1000;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
 
         #pieces-bank {
@@ -113,6 +108,7 @@
             max-width: var(--max-ui-width);
             flex-wrap: wrap;
             justify-content: center;
+            min-height: 100px;
         }
 
         button {
@@ -125,7 +121,6 @@
             margin-bottom: 20px;
         }
 
-        /* קונפטי */
         .confetti {
             position: fixed;
             width: 10px;
@@ -198,7 +193,6 @@
             const parent1 = activePiece.parentElement;
             const parent2 = clickedPiece.parentElement;
 
-            // החלפה
             parent1.appendChild(clickedPiece);
             parent2.appendChild(activePiece);
 
@@ -233,26 +227,20 @@
         });
 
         function checkWin() {
-            let winCount = 0;
-            
+            let isFull = true;
+            let isCorrect = true;
+
             slots.forEach(s => {
                 const p = s.children[0];
-                if (p) {
-                    // בדיקה האם החלק הספציפי במקום הנכון
-                    if (p.dataset.idx === s.dataset.index) {
-                        p.classList.add('correct-placement');
-                        winCount++;
-                    } else {
-                        p.classList.remove('correct-placement');
-                    }
+                if (!p) {
+                    isFull = false;
+                } else if (p.dataset.idx !== s.dataset.index) {
+                    isCorrect = false;
                 }
             });
 
-            if (winCount === 5) {
+            if (isFull && isCorrect) {
                 triggerWin();
-            } else {
-                msg.style.display = 'none';
-                container.classList.remove('win-glow');
             }
         }
 
@@ -261,6 +249,7 @@
             container.classList.add('win-glow');
             slots.forEach(s => s.style.border = 'none');
             
+            // יצירת קונפטי
             for (let i = 0; i < 100; i++) {
                 setTimeout(createConfetti, i * 20);
             }
